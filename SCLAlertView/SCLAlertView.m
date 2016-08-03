@@ -116,12 +116,16 @@ SCLTimerDisplay *buttonTimer;
 
 - (instancetype)initWithNewWindowWidth:(CGFloat)windowWidth
 {
+    #ifndef SCL_IS_APP_EXTENSION
     self = [self initWithWindowWidth:windowWidth];
     if(self)
     {
         [self setupNewWindow];
     }
     return self;
+    #else
+    return [self initWithWindowWidth:windowWidth];
+    #endif
 }
 
 - (void)dealloc
@@ -306,17 +310,7 @@ SCLTimerDisplay *buttonTimer;
     {
         sz = _rootViewController.view.frame.size;
     }
-    
-    if (SYSTEM_VERSION_LESS_THAN(@"8.0"))
-    {
-        // iOS versions before 7.0 did not switch the width and height on device roration
-        if (UIInterfaceOrientationIsLandscape([UIApplication sharedApplication].statusBarOrientation))
-        {
-            CGSize ssz = sz;
-            sz = CGSizeMake(ssz.height, ssz.width);
-        }
-    }
-    
+        
     if(!_usingNewWindow)
     {
         // Set new background frame
@@ -811,12 +805,14 @@ SCLTimerDisplay *buttonTimer;
 {
     if(_usingNewWindow)
     {
+        #ifndef SCL_IS_APP_EXTENSION
         // Save previous window
         self.previousWindow = [UIApplication sharedApplication].keyWindow;
         self.backgroundView.frame = _SCLAlertWindow.bounds;
         
         // Add window subview
         [_SCLAlertWindow addSubview:_backgroundView];
+        #endif
     }
     else
     {
@@ -1172,12 +1168,11 @@ SCLTimerDisplay *buttonTimer;
 
 - (CGRect)mainScreenFrame
 {
-    return [self isAppExtension] ? _extensionBounds : [UIApplication sharedApplication].keyWindow.bounds;
-}
-
-- (BOOL)isAppExtension
-{
-    return [[NSBundle mainBundle].executablePath rangeOfString:@".appex/"].location != NSNotFound;
+    #ifndef SCL_IS_APP_EXTENSION
+    return [UIApplication sharedApplication].keyWindow.bounds;
+    #else
+    return _extensionBounds;
+    #endif
 }
 
 #pragma mark - Background Effects
@@ -1192,7 +1187,11 @@ SCLTimerDisplay *buttonTimer;
 
 - (void)makeBlurBackground
 {
+    #ifndef SCL_IS_APP_EXTENSION
     UIView *appView = (_usingNewWindow) ? [UIApplication sharedApplication].keyWindow.subviews.lastObject : _rootViewController.view;
+    #else
+    UIView *appView = _rootViewController.view;
+    #endif
     UIImage *image = [UIImage convertViewToImage:appView];
     UIImage *blurSnapshotImage = [image applyBlurWithRadius:5.0f
                                                   tintColor:[UIColor colorWithWhite:0.2f
